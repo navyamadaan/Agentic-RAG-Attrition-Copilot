@@ -1,0 +1,6 @@
+
+REDUCE ATTRITION POLICY 2026:
+1. OVERTIME: If an employee's risk is high due to OverTime, managers should offer a 4-day work week trial.
+2. SALARY: If MonthlyIncome is below the department average, a 'Market Adjustment' of 5-10% is pre-approved.
+3. ROLE CHANGE: Sales Executives are eligible for 'Lateral Transfers' to Account Management after 2 years.
+4. JOB SATISFACTION: If JobSatisfaction is below 2, a mandatory 1-on-1 career coaching session must be scheduled.
