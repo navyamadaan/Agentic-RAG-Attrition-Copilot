@@ -4,6 +4,12 @@ import xgboost as xgb
 import os
 import time
 
+# Use Streamlit's built-in secrets manager
+if "GOOGLE_API_KEY" in st.secrets:
+    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+else:
+    st.error("Please set the GOOGLE_API_KEY in Streamlit Secrets.")
+
 # AI & Agent Imports
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.embeddings import HuggingFaceEmbeddings
