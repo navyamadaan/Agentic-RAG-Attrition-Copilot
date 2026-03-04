@@ -1,0 +1,8 @@
+streamlit
+pandas
+xgboost
+langchain-google-genai
+langchain-community
+langchain
+sentence-transformers
+chromadb
