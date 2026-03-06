@@ -9,8 +9,8 @@ from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 
-# --- 1. AUTHENTICATION & CONFIG ---
-st.set_page_config(page_title="IBM Retention Copilot", layout="wide")
+# --- 1. AUTHENTICATION ---
+st.set_page_config(page_title="Agentic-RAG Attrition CoPilot", layout="wide")
 
 # Securely fetch API Key from Streamlit Secrets
 if "GOOGLE_API_KEY" in st.secrets:
@@ -34,7 +34,7 @@ def load_resources():
         with open("hr_policy.txt", "r") as f:
             policy_text = f.readlines()
     else:
-        policy_text = ["Standard retention policy: Engage employee with career coaching."]
+        policy_text = ["Standard retention policy: Offer career coaching and flexible hours."]
 
     # Setup Vector Database
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -64,15 +64,19 @@ emp_idx = st.sidebar.number_input("Enter Employee Index", min_value=0, max_value
 if st.sidebar.button("Run Analysis"):
     with st.spinner("🤖 AI is analyzing data and HR policies..."):
         try:
-            # Step A: Get Prediction (Logic should match your Phase 1 preprocessing)
-            # For demonstration, we simulate the risk from the model's perspective
-            risk_prob = 0.88  # Replace with actual model.predict_proba(features)
+            # Step A: Get Real Prediction from XGBoost
+            employee_data = df.iloc[[emp_idx]].copy()
+            if 'Attrition' in employee_data.columns:
+                employee_data = employee_data.drop(columns=['Attrition'])
+            
+            # Predict probability (class 1 is 'Yes' for attrition)
+            risk_prob = model.predict_proba(employee_data)[0][1]
             
             # Step B: Initialize Agent
-            llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+            llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
             
             prompt = ChatPromptTemplate.from_messages([
-                ("system", "You are an IBM HR expert. Recommend a plan based on the risk and company policy. Use the search_hr_policy tool."),
+                ("system", "You are a Senior IBM HR Business Partner. Based on the risk score, use the tool to find a policy and provide a clear, bulleted retention plan. Return only the plan as clean text, no JSON."),
                 ("human", "{input}"),
                 ("placeholder", "{agent_scratchpad}"),
             ])
@@ -81,18 +85,19 @@ if st.sidebar.button("Run Analysis"):
             agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
             
             # Step C: Generate Plan
-            query = f"Employee {emp_idx} has a {risk_prob:.2%} risk of leaving. What is the retention plan?"
+            query = f"Employee at index {emp_idx} has a predicted {risk_prob:.2%} risk of leaving. What is the recommended retention plan?"
             response = agent_executor.invoke({"input": query})
             
-            # Step D: Display
+            # Step D: Display Results
             col1, col2 = st.columns([1, 2])
             with col1:
                 st.metric("Attrition Risk Score", f"{risk_prob:.1%}")
+                st.info(f"Analysis complete for Employee ID: {df.iloc[emp_idx].get('EmployeeNumber', emp_idx)}")
             with col2:
-                st.subheader("AI-Generated Retention Strategy")
-                st.write(response['output'])
+                st.subheader("Personalized Retention Strategy")
+                st.success(response['output']) # Extracts the clean text output
                 
         except Exception as e:
             st.error(f"❌ Application Error: {e}")
-            if "INVALID_ARGUMENT" in str(e):
-                st.info("Check your API key in Streamlit Secrets and ensure the model name is correct.")
+            if "quota" in str(e).lower():
+                st.info("💡 Daily API Limit Reached. Please try again tomorrow.")
