@@ -66,6 +66,15 @@ if st.sidebar.button("Run Analysis"):
         try:
             # Step A: Get Real Prediction from XGBoost
             employee_data = df.iloc[[emp_idx]].copy()
+
+            # 1. Identify and convert 'object' columns to 'category'
+            # This matches the names from your error message
+            cat_cols = ['BusinessTravel', 'Department', 'EducationField', 'Gender', 
+                        'JobRole', 'MaritalStatus', 'Over18', 'OverTime']
+            
+            for col in cat_cols:
+                employee_data[col] = employee_data[col].astype('category')
+            
             if 'Attrition' in employee_data.columns:
                 employee_data = employee_data.drop(columns=['Attrition'])
             
