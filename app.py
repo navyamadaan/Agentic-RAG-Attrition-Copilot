@@ -64,22 +64,45 @@ emp_idx = st.sidebar.number_input("Enter Employee Index", min_value=0, max_value
 if st.sidebar.button("Run Analysis"):
     with st.spinner("🤖 AI is analyzing data and HR policies..."):
         try:
-            # Step A: Get Real Prediction from XGBoost
+            # 1. Get the single employee row
             employee_data = df.iloc[[emp_idx]].copy()
+            
+            # 2. Drop columns that were NOT used in training (based on your error)
+            # These columns are in your CSV but the model never saw them
+            cols_to_drop = ['Attrition', 'EmployeeCount', 'EmployeeNumber', 'Over18', 'StandardHours']
+            employee_data = employee_data.drop(columns=[c for c in cols_to_drop if c in employee_data.columns])
 
-            # 1. Identify and convert 'object' columns to 'category'
-            # This matches the names from your error message
-            cat_cols = ['BusinessTravel', 'Department', 'EducationField', 'Gender', 
-                        'JobRole', 'MaritalStatus', 'Over18', 'OverTime']
+            # 3. Apply One-Hot Encoding (pd.get_dummies)
+            # This turns 'OverTime' into 'OverTime_Yes', etc.
+            employee_encoded = pd.get_dummies(employee_data)
+
+            # 4. ALIGNMENT: The Model expects exactly 44 specific columns
+            expected_features = [
+                'Age', 'DailyRate', 'DistanceFromHome', 'Education', 'EnvironmentSatisfaction', 
+                'HourlyRate', 'JobInvolvement', 'JobLevel', 'JobSatisfaction', 'MonthlyIncome', 
+                'MonthlyRate', 'NumCompaniesWorked', 'PercentSalaryHike', 'PerformanceRating', 
+                'RelationshipSatisfaction', 'StockOptionLevel', 'TotalWorkingYears', 
+                'TrainingTimesLastYear', 'WorkLifeBalance', 'YearsAtCompany', 'YearsInCurrentRole', 
+                'YearsSinceLastPromotion', 'YearsWithCurrManager', 'BusinessTravel_Travel_Frequently', 
+                'BusinessTravel_Travel_Rarely', 'Department_Research & Development', 'Department_Sales', 
+                'EducationField_Life Sciences', 'EducationField_Marketing', 'EducationField_Medical', 
+                'EducationField_Other', 'EducationField_Technical Degree', 'Gender_Male', 
+                'JobRole_Human Resources', 'JobRole_Laboratory Technician', 'JobRole_Manager', 
+                'JobRole_Manufacturing Director', 'JobRole_Research Director', 'JobRole_Research Scientist', 
+                'JobRole_Sales Executive', 'JobRole_Sales Representative', 'MaritalStatus_Married', 
+                'MaritalStatus_Single', 'OverTime_Yes'
+            ]
+
+            # Create any missing columns with 0 (e.g., if this specific employee doesn't work OverTime)
+            for col in expected_features:
+                if col not in employee_encoded.columns:
+                    employee_encoded[col] = 0
             
-            for col in cat_cols:
-                employee_data[col] = employee_data[col].astype('category')
-            
-            if 'Attrition' in employee_data.columns:
-                employee_data = employee_data.drop(columns=['Attrition'])
-            
-            # Predict probability (class 1 is 'Yes' for attrition)
-            risk_prob = model.predict_proba(employee_data)[0][1]
+            # Ensure columns are in the EXACT same order as the list above
+            employee_encoded = employee_encoded[expected_features]
+
+            # 5. Predict using the cleaned and aligned data
+            risk_prob = model.predict_proba(employee_encoded)[0][1]
             
             # Step B: Initialize Agent
             llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
