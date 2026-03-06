@@ -69,7 +69,7 @@ if st.sidebar.button("Run Analysis"):
             risk_prob = 0.88  # Replace with actual model.predict_proba(features)
             
             # Step B: Initialize Agent
-            llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
+            llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
             
             prompt = ChatPromptTemplate.from_messages([
                 ("system", "You are an IBM HR expert. Recommend a plan based on the risk and company policy. Use the search_hr_policy tool."),
