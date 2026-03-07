@@ -105,7 +105,7 @@ if st.sidebar.button("Run Analysis"):
             risk_prob = model.predict_proba(employee_encoded)[0][1]
             
             # Step B: Initialize Agent
-            llm = ChatGoogleGenerativeAI(model="models/gemini-1.5-flash-latest", temperature=0)
+            llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
             
             prompt = ChatPromptTemplate.from_messages([
                 ("system", "You are a Senior IBM HR Business Partner. Based on the risk score, use the tool to find a policy and provide a clear, bulleted retention plan. Return only the plan as clean text, no JSON."),
